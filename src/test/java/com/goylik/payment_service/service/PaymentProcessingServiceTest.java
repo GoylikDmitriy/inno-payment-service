@@ -4,6 +4,8 @@ import com.goylik.payment_service.model.enums.PaymentStatus;
 import com.goylik.payment_service.service.impl.PaymentProcessingServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -31,36 +33,22 @@ class PaymentProcessingServiceTest {
         assertEquals(PaymentStatus.SUCCESS, result);
     }
 
-    @Test
-    void pay_ShouldReturnFailed_WhenRandomNumberIsOdd() {
-        mockRestClient("13");
-
+    @ParameterizedTest
+    @CsvSource({
+            "13, FAILED",
+            "not-a-number, FAILED",
+            "null, FAILED",
+            "1, FAILED"
+    })
+    void pay_ShouldReturnFailed_ForVariousInvalidOrOddResponses(String input, PaymentStatus expected) {
+        mockRestClient(input);
         PaymentStatus result = paymentProcessingService.pay();
-
-        assertEquals(PaymentStatus.FAILED, result);
-    }
-
-    @Test
-    void pay_ShouldReturnFailed_WhenResponseIsNotANumber() {
-        mockRestClient("not-a-number");
-
-        PaymentStatus result = paymentProcessingService.pay();
-
-        assertEquals(PaymentStatus.FAILED, result);
+        assertEquals(expected, result);
     }
 
     @Test
     void pay_ShouldReturnFailed_WhenRestClientThrowsException() {
         when(restClient.get()).thenThrow(new RuntimeException("Connection refused"));
-
-        PaymentStatus result = paymentProcessingService.pay();
-
-        assertEquals(PaymentStatus.FAILED, result);
-    }
-
-    @Test
-    void pay_ShouldReturnFailed_WhenResponseIsNull() {
-        mockRestClient(null);
 
         PaymentStatus result = paymentProcessingService.pay();
 
@@ -74,15 +62,6 @@ class PaymentProcessingServiceTest {
         PaymentStatus result = paymentProcessingService.pay();
 
         assertEquals(PaymentStatus.SUCCESS, result);
-    }
-
-    @Test
-    void pay_ShouldReturnFailed_WhenBoundaryOddNumber() {
-        mockRestClient("1");
-
-        PaymentStatus result = paymentProcessingService.pay();
-
-        assertEquals(PaymentStatus.FAILED, result);
     }
 
     private void mockRestClient(String response) {

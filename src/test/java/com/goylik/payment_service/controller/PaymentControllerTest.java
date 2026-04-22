@@ -199,6 +199,17 @@ class PaymentControllerTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.content[0].status").value("SUCCESS"));
     }
 
+    @Test
+    void getPayments_ShouldReturn400_WhenFilterWithTwoParams() throws Exception {
+        createPayment(USER_ID, 1L, PaymentStatus.SUCCESS);
+        createPayment(USER_ID, 2L, PaymentStatus.FAILED);
+
+        mockMvc.perform(withAdmin(get(BASE_URL)
+                        .param("status", "SUCCESS"))
+                        .param("userId", "1"))
+                .andExpect(status().isBadRequest());
+    }
+
     private void createPayment(Long userId, Long orderId, PaymentStatus status) {
         Payment payment = new Payment();
         payment.setUserId(userId);
